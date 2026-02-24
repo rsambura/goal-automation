@@ -1,3 +1,5 @@
+```python
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -274,6 +276,22 @@ def main():
     # Title
     st.markdown('<h1 class="main-header">🎯 SDR Goal Automation Dashboard</h1>', unsafe_allow_html=True)
     
+    # Sidebar - Forecast File Upload
+    st.sidebar.header("📁 Forecast Data")
+    forecast_file = st.sidebar.file_uploader(
+        "Upload 2026 Forecast File",
+        type=['xlsx', 'csv'],
+        help="Upload your CP team's forecast file (Excel or CSV)"
+    )
+    
+    if forecast_file is not None:
+        st.sidebar.success(f"✅ File uploaded: {forecast_file.name}")
+        st.sidebar.info(f"📊 File size: {forecast_file.size / 1024 / 1024:.2f} MB")
+    else:
+        st.sidebar.info("💡 No file uploaded - will use sample data")
+    
+    st.sidebar.divider()
+    
     # Step 1: Baseline Selection
     st.subheader("📊 Step 1: Select Baseline Period")
     
@@ -290,7 +308,22 @@ def main():
         if st.button("🔄 Calculate Baseline", use_container_width=True):
             with st.spinner("Calculating baseline..."):
                 sdr_data = generate_sample_data()
-                goals_df = calculate_goals(sdr_data)
+                
+                # Load forecast data if uploaded
+                forecast_data = None
+                if forecast_file is not None:
+                    try:
+                        if forecast_file.name.endswith('.csv'):
+                            forecast_data = pd.read_csv(forecast_file)
+                        else:
+                            forecast_data = pd.read_excel(forecast_file)
+                        st.success(f"✅ Loaded {len(forecast_data)} rows from {forecast_file.name}")
+                    except Exception as e:
+                        st.error(f"❌ Error reading file: {str(e)}")
+                        st.info("💡 Try converting your Excel file to CSV format")
+                        forecast_data = None
+                
+                goals_df = calculate_goals(sdr_data, forecast_data)
                 
                 if goals_df is not None:
                     st.session_state['baseline_df'] = goals_df.copy()
@@ -482,4 +515,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-
+```
